@@ -1,0 +1,40 @@
+#ifndef _ROXEL_ROUTER_H_
+#define _ROXEL_ROUTER_H_
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
+#include "cli_manager.h"
+#include "tcp_ext.h"
+#include "roxel_macro.h"
+#include "request_machine.h"
+#include "effect_machine.h"
+#include "roxel_ota.h"
+
+class X10_router
+{
+public:
+    X10_router(x10_cli_manager *cli_manager, QueueHandle_t *on_connect_handler, QueueHandle_t *message_handler);
+    ~X10_router();
+    void launch(void);
+    void stop(void);
+    void attachOverTheAir(OTA *ota);
+
+    TaskHandle_t _router_on_connect_task_handler = NULL;
+    TaskHandle_t _router_task_handler = NULL;
+
+    QueueHandle_t *_on_connect_handler;
+    QueueHandle_t *_message_handler;
+    x10_cli_manager *_cli_manager;
+
+    X10_RequestMachine *request_machine(void) const;
+    X10_EffectMachine *effect_machine(void) const;
+    OTA *ota_instance(void) const;
+
+private:
+    X10_RequestMachine *_request_machine = nullptr;
+    X10_EffectMachine *_effect_machine = nullptr;
+    OTA *_ota_instance = nullptr;
+};
+
+#endif
