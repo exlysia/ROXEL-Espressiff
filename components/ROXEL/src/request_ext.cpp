@@ -72,6 +72,14 @@ Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)
     _id = id;
 }
 
+Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall)
+{
+    _on_call = onCall;
+    _id_size = strlen(id);
+    _hash = CRC32(id);
+    _id = id;
+}
+
 const char *Request::id(void) const
 {
     return _id;
@@ -120,7 +128,7 @@ void Request::respond(int client_id, cJSON *data)
 
 void Request::update_call(int client_id, cJSON *data)
 {
-    if (NOT_NULL(_on_call))
+    if (_on_call)
     {
         Payload *payload = CREATE(Payload, data);
         if (NOT_NULL(payload))
@@ -133,7 +141,7 @@ void Request::update_call(int client_id, cJSON *data)
 
 void Request::update_connect(int client_id)
 {
-    if (NOT_NULL(_on_connect))
+    if (_on_connect)
     {
         _on_connect(*this, client_id);
     }

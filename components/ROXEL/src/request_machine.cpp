@@ -87,7 +87,10 @@ inline static void __x10__request_machine_execution_task__(void *pvParameters)
                 {
                     for (size_t i = 0; i < machine->_request_count; i++)
                     {
-                        machine->_requests[i]->update_connect(execution.client_id);
+                        if (NOT_NULL(machine->_requests[i]))
+                        {
+                            machine->_requests[i]->update_connect(execution.client_id);
+                        }
                     }
                 }
             }

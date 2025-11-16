@@ -44,7 +44,8 @@ private:
 class Request
 {
 public:
-    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall = NULL, std::function<void(Incoming, ClientID)> onConnect = NULL);
+    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect);
+    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall);
     const char *id(void) const;
     uint32_t hash(void) const;
     size_t id_size(void) const;
