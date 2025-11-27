@@ -8,7 +8,6 @@
 #include "../utils/machine_impl.h"
 #include "../utils/cli_manager.h"
 #include "../utils/roxel_macro.h"
-#include "fast_machine.h"
 #include "manager_ext.h"
 #include "ext.h"
 
@@ -18,6 +17,8 @@ public:
     X10_RequestMachine(x10_cli_manager *cli_manager);
     ~X10_RequestMachine();
     bool load(RequestLoader *loader);
+    void launch(void);
+    void stop(void);
 
     bool identify(uint32_t hash, cJSON *json) override;
     void on_connect(int client_id) override;
@@ -43,8 +44,6 @@ public:
     x10_cli_manager *_cli_manager;
 
 private:
-    FastRequestMachine *_fast_request_machine = nullptr;
-
     uint32_t _identificator = 0;
 
     bool _initialize_query(void);

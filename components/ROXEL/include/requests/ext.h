@@ -17,7 +17,8 @@ class RequestImpl;
 typedef enum
 {
     FULL,
-    FAST
+    FAST,
+    NONE
 } RequestType;
 
 typedef struct
@@ -55,7 +56,7 @@ public:
     uint32_t hash(void) const;
     size_t id_size(void) const;
     bool operator==(const RequestImpl &other) const;
-    RequestType type(void) const;
+    RequestType type(void);
 
     virtual void update_call(int client_id, cJSON *data) {}
     virtual void update_connect(int client_id) {}
@@ -65,7 +66,7 @@ public:
     int _position = -1;
 
 private:
-    RequestType _type;
+    RequestType _type = RequestType::NONE;
     uint32_t _hash = 0;
     const char *_id;
     size_t _id_size;

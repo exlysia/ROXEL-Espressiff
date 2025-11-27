@@ -315,6 +315,8 @@ size_t X10_RequestMachine::_accept_requests(RequestImpl **requests, size_t count
     for (size_t i = 0; i < count; i++)
     {
         RequestImpl *request = requests[i];
+        if (NOT_NULL(request) && request->type() != RequestType::FULL)
+            continue;
         int8_t result = _validate_request(request);
         accepted += result == 1 ? 1 : 0;
         if (result != 1)
@@ -337,10 +339,6 @@ int8_t X10_RequestMachine::_validate_request(RequestImpl *request)
         {
             RequestImpl *instance = _requests[i];
             if (NOT_NULL(instance) && instance->hash() == request->hash())
-            {
-                return 0;
-            }
-            if (instance->type() != RequestType::FULL)
             {
                 return 0;
             }

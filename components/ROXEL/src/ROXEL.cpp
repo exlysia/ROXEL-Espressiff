@@ -17,9 +17,9 @@ inline static void __roxel_shutdown_handler__(void)
 ROXEL::ROXEL(Network &network, const char *token)
 {
     _cli_manager = CREATE(x10_cli_manager, token);
-    _udp_server = CREATE(roxel_udp, 5001, 5000, _cli_manager);
+    _udp_server = CREATE(roxel_udp, 5001, _cli_manager);
     _tcp_server = CREATE(roxel_tcp, 5002, _cli_manager);
-    _router = CREATE(X10_router, _cli_manager, &_tcp_server->_tcp_on_connect_queue_handler, &_tcp_server->_tcp_queue_handler);
+    _router = CREATE(X10_router, _cli_manager, 5000, &_tcp_server->_tcp_on_connect_queue_handler, &_tcp_server->_tcp_queue_handler);
     _network = &network;
 }
 
@@ -117,10 +117,15 @@ void ROXEL::__upload_requests__(RequestLoader *loader)
     {
         return;
     }
-    X10_RequestMachine *machine = NOT_NULL(_router) ? _router->request_machine() : nullptr;
-    if (NOT_NULL(machine))
+    X10_RequestMachine *full_machine = NOT_NULL(_router) ? _router->request_full_machine() : nullptr;
+    if (NOT_NULL(full_machine))
     {
-        machine->load(loader);
+        full_machine->load(loader);
+    }
+    FastRequestMachine *fast_machine = NOT_NULL(_router) ? _router->request_fast_machine() : nullptr;
+    if (NOT_NULL(fast_machine))
+    {
+        fast_machine->load(loader);
     }
 }
 

@@ -87,6 +87,6 @@
     "cli_manager.h": "c",
     "roxel_macro.h": "c"
   },
-  "idf.portWin": "COM4",
+  "idf.portWin": "COM6",
   "idf.flashType": "UART"
 }

@@ -95,7 +95,7 @@ bool RequestImpl::operator==(const RequestImpl &other) const
     return _hash == other._hash;
 }
 
-RequestType RequestImpl::type(void) const
+RequestType RequestImpl::type(void)
 {
     return _type;
 }
