@@ -17,7 +17,7 @@ inline static void __roxel_shutdown_handler__(void)
 ROXEL::ROXEL(Network &network, const char *token)
 {
     _cli_manager = CREATE(x10_cli_manager, token);
-    _udp_server = CREATE(roxel_udp, 5001, _cli_manager);
+    _udp_server = CREATE(roxel_udp, 5001, 5000, _cli_manager);
     _tcp_server = CREATE(roxel_tcp, 5002, _cli_manager);
     _router = CREATE(X10_router, _cli_manager, &_tcp_server->_tcp_on_connect_queue_handler, &_tcp_server->_tcp_queue_handler);
     _network = &network;

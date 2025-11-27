@@ -69,9 +69,10 @@ inline static void __x10__udp_task__(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-roxel_udp::roxel_udp(uint16_t port, x10_cli_manager *cli_manager)
+roxel_udp::roxel_udp(uint16_t port, uint16_t fast_port, x10_cli_manager *cli_manager)
 {
     _cli_manager = cli_manager;
+    _fast_port = port;
     _port = port;
 }
 

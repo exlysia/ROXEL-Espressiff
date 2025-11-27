@@ -11,7 +11,7 @@
 class roxel_udp
 {
 public:
-    roxel_udp(uint16_t port, x10_cli_manager *cli_manager);
+    roxel_udp(uint16_t port, uint16_t fast_port, x10_cli_manager *cli_manager);
     ~roxel_udp();
     void launch(void);
     void stop(void);
@@ -25,6 +25,7 @@ public:
 
 private:
     bool _is_running = 0;
+    uint16_t _fast_port;
     uint16_t _port;
 
     bool _create_server(void);

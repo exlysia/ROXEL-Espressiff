@@ -47,7 +47,9 @@ public:
 
     SemaphoreHandle_t _instances_lock = NULL;
 
+    uint32_t *_fast_request_hashes = nullptr;
     uint32_t *_request_hashes = nullptr;
+    RequestImpl **_fast_requests = nullptr;
     RequestImpl **_requests = nullptr;
     size_t _request_count = 0;
 

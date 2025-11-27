@@ -63,10 +63,11 @@ Payload &Payload::object(const char *key)
     return *this;
 }
 
-RequestImpl::RequestImpl(const char *id)
+RequestImpl::RequestImpl(const char *id, RequestType type)
 {
     _id_size = strlen(id);
     _hash = CRC32(id);
+    _type = type;
     _id = id;
 }
 
@@ -94,13 +95,18 @@ bool RequestImpl::operator==(const RequestImpl &other) const
     return _hash == other._hash;
 }
 
-Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect) : RequestImpl(id)
+RequestType RequestImpl::type(void) const
+{
+    return _type;
+}
+
+Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect) : RequestImpl(id, RequestType::FULL)
 {
     _on_connect = onConnect;
     _on_call = onCall;
 }
 
-Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall) : RequestImpl(id)
+Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall) : RequestImpl(id, RequestType::FULL)
 {
     _on_call = onCall;
 }
@@ -148,7 +154,7 @@ void Request::update_connect(int client_id)
     }
 }
 
-FastRequest::FastRequest(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall) : RequestImpl(id)
+FastRequest::FastRequest(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall) : RequestImpl(id, RequestType::FAST)
 {
     _on_call = onCall;
 }
