@@ -8,7 +8,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
-#include "roxel_macro.h"
+#include "../utils/roxel_macro.h"
 
 #define EFFECTS(...) make_effects(__VA_ARGS__)
 

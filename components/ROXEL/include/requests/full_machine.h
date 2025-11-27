@@ -5,26 +5,12 @@
 #include <freertos/semphr.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
-#include "machine_impl.h"
-#include "cli_manager.h"
-#include "request_ext.h"
-#include "roxel_macro.h"
-
-typedef struct
-{
-    char *data = nullptr;
-    int8_t client_id = -1;
-    uint32_t hash = 0;
-    bool connect = 0;
-} RequestTransaction;
-
-typedef struct
-{
-    int8_t client_id;
-    bool connect;
-    int position;
-    char *data;
-} RequestExecution;
+#include "../utils/machine_impl.h"
+#include "../utils/cli_manager.h"
+#include "../utils/roxel_macro.h"
+#include "fast_machine.h"
+#include "manager_ext.h"
+#include "ext.h"
 
 class X10_RequestMachine : public x10_machine_impl
 {
@@ -47,9 +33,7 @@ public:
 
     SemaphoreHandle_t _instances_lock = NULL;
 
-    uint32_t *_fast_request_hashes = nullptr;
     uint32_t *_request_hashes = nullptr;
-    RequestImpl **_fast_requests = nullptr;
     RequestImpl **_requests = nullptr;
     size_t _request_count = 0;
 
@@ -59,6 +43,8 @@ public:
     x10_cli_manager *_cli_manager;
 
 private:
+    FastRequestMachine *_fast_request_machine = nullptr;
+
     uint32_t _identificator = 0;
 
     bool _initialize_query(void);

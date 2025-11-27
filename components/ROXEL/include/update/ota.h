@@ -10,7 +10,7 @@
 #include "esp_flash_partitions.h"
 #include "esp_ota_ops.h"
 #include "esp_system.h"
-#include "roxel_macro.h"
+#include "../utils/roxel_macro.h"
 
 #define ROXEL_OTA_CHUNK_SIZE 2048
 

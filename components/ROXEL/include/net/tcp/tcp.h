@@ -6,9 +6,9 @@
 #include <freertos/task.h>
 #include "lwip/sockets.h"
 
-#include "cli_manager.h"
-#include "roxel_macro.h"
-#include "tcp_ext.h"
+#include "../../utils/cli_manager.h"
+#include "../../utils/roxel_macro.h"
+#include "ext.h"
 
 class roxel_tcp;
 

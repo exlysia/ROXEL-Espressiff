@@ -4,12 +4,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
-#include "cli_manager.h"
-#include "tcp_ext.h"
-#include "roxel_macro.h"
-#include "request_machine.h"
-#include "effect_machine.h"
-#include "roxel_ota.h"
+#include "../requests/full_machine.h"
+#include "../utils/roxel_macro.h"
+#include "../utils/cli_manager.h"
+#include "../effects/machine.h"
+#include "../net/tcp/ext.h"
+#include "../update/ota.h"
 
 class X10_router
 {

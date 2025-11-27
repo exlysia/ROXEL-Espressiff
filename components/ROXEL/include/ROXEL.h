@@ -1,12 +1,12 @@
 #ifndef _ROXEL_H_
 #define _ROXEL_H_
 
-#include "roxel_network.h"
-#include "roxel_macro.h"
-#include "roxel_udp.h"
-#include "roxel_tcp.h"
-#include "router.h"
-#include "effect_machine.h"
+#include "utils/roxel_macro.h"
+#include "effects/machine.h"
+#include "router/router.h"
+#include "net/udp/udp.h"
+#include "net/tcp/tcp.h"
+#include "net/network.h"
 
 class ROXEL;
 

@@ -36,7 +36,7 @@
             vTaskDelete(x); \
         x = NULL;           \
     } while (0)
-#define DELETE_MUTEXT(x)         \
+#define DELETE_MUTEX(x)         \
     do                           \
     {                            \
         if (NOT_NULL(x))         \

@@ -1,4 +1,4 @@
-#include "router.h"
+#include "router/router.h"
 
 inline static void __x10__router_processing__(int client_id, X10_router *router, const char *event, cJSON *json)
 {
