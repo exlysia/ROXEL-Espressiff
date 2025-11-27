@@ -12,7 +12,7 @@
 
 #define REQUESTS(...) make_requests(__VA_ARGS__)
 
-class Request;
+class RequestImpl;
 
 typedef struct
 {
@@ -21,7 +21,7 @@ typedef struct
     int client_id;
 } RequestRespond;
 
-typedef Request &Incoming;
+typedef RequestImpl &Incoming;
 typedef int ClientID;
 
 class Payload
@@ -41,31 +41,50 @@ private:
     cJSON *_data;
 };
 
-class Request
+class RequestImpl
 {
 public:
-    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect);
-    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall);
+    RequestImpl(const char *id);
     const char *id(void) const;
     uint32_t hash(void) const;
     size_t id_size(void) const;
-    bool operator==(const Request &other) const;
+    bool operator==(const RequestImpl &other) const;
 
-    void respond(int client_id, cJSON *data);
+    virtual void update_call(int client_id, cJSON *data) {}
+    virtual void update_connect(int client_id) {}
+    virtual void respond(int client_id, cJSON *data) {}
 
     QueueHandle_t _respond_queue = NULL;
     int _position = -1;
 
-    void update_call(int client_id, cJSON *data);
-    void update_connect(int client_id);
+private:
+    uint32_t _hash = 0;
+    const char *_id;
+    size_t _id_size;
+};
+
+class Request : public RequestImpl
+{
+public:
+    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect);
+    Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall);
+    void update_call(int client_id, cJSON *data) override;
+    void update_connect(int client_id) override;
+    void respond(int client_id, cJSON *data) override;
 
 private:
     std::function<void(Incoming, ClientID, Payload)> _on_call;
     std::function<void(Incoming, ClientID)> _on_connect;
+};
 
-    uint32_t _hash = 0;
-    const char *_id;
-    size_t _id_size;
+class FastRequest : public RequestImpl
+{
+public:
+    FastRequest(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall);
+    void update_call(int client_id, cJSON *data) override;
+
+private:
+    std::function<void(Incoming, ClientID, Payload)> _on_call;
 };
 
 class Answer
@@ -77,8 +96,8 @@ public:
     Answer &boolean(const char *key, bool value);
     cJSON *detach();
 
-    void respond(int client_id, Request &incomming);
-    void broadcast(Request &incomming);
+    void respond(int client_id, RequestImpl &incomming);
+    void broadcast(RequestImpl &incomming);
 
 private:
     cJSON *_payload = NULL;
@@ -87,12 +106,12 @@ private:
 class RequestLoader
 {
 public:
-    Request **requests = nullptr;
+    RequestImpl **requests = nullptr;
     int count = 0;
 
     RequestLoader() = default;
 
-    RequestLoader(Request **list, int n)
+    RequestLoader(RequestImpl **list, int n)
         : requests(list), count(n) {}
 
     RequestLoader(const RequestLoader &) = delete;
@@ -113,15 +132,15 @@ public:
 };
 
 template <typename T>
-constexpr Request *as_request_ptr(T *ptr) noexcept { return ptr; }
+constexpr RequestImpl *as_request_ptr(T *ptr) noexcept { return ptr; }
 
 template <typename T>
-constexpr Request *as_request_ptr(T &ref) noexcept { return &ref; }
+constexpr RequestImpl *as_request_ptr(T &ref) noexcept { return &ref; }
 
 template <typename... Args>
 inline RequestLoader *make_requests(Args &&...args)
 {
-    static Request *arr[sizeof...(Args)];
+    static RequestImpl *arr[sizeof...(Args)];
     size_t i = 0;
     ((arr[i++] = as_request_ptr(std::forward<Args>(args))), ...);
 

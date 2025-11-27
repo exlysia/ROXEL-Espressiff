@@ -48,7 +48,7 @@ public:
     SemaphoreHandle_t _instances_lock = NULL;
 
     uint32_t *_request_hashes = nullptr;
-    Request **_requests = nullptr;
+    RequestImpl **_requests = nullptr;
     size_t _request_count = 0;
 
     char *respond_buffer = nullptr;
@@ -63,8 +63,8 @@ private:
     bool _start_tasks(void);
     void _release_resources(void);
 
-    size_t _accept_requests(Request **requests, size_t count);
-    int8_t _validate_request(Request *request);
+    size_t _accept_requests(RequestImpl **requests, size_t count);
+    int8_t _validate_request(RequestImpl *request);
     bool _allocate_requests(size_t size);
     bool _allocate_respond_cache(void);
     void _load_requests(RequestLoader *loader);

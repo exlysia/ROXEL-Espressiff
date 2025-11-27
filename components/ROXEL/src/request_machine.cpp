@@ -76,7 +76,7 @@ inline static void __x10__request_machine_execution_task__(void *pvParameters)
         }
         if (xQueueReceive(machine->_execution_queue_handler, &execution, portMAX_DELAY))
         {
-            Request *instance = execution.position > -1 && execution.position < machine->_request_count ? machine->_requests[execution.position] : nullptr;
+            RequestImpl *instance = execution.position > -1 && execution.position < machine->_request_count ? machine->_requests[execution.position] : nullptr;
             if (execution.connect)
             {
                 if (NOT_NULL(instance))
@@ -309,12 +309,12 @@ void X10_RequestMachine::_release_resources(void)
     _free_buffer();
 }
 
-size_t X10_RequestMachine::_accept_requests(Request **requests, size_t count)
+size_t X10_RequestMachine::_accept_requests(RequestImpl **requests, size_t count)
 {
     size_t accepted = 0;
     for (size_t i = 0; i < count; i++)
     {
-        Request *request = requests[i];
+        RequestImpl *request = requests[i];
         int8_t result = _validate_request(request);
         accepted += result == 1 ? 1 : 0;
         if (result != 1)
@@ -325,7 +325,7 @@ size_t X10_RequestMachine::_accept_requests(Request **requests, size_t count)
     return accepted;
 }
 
-int8_t X10_RequestMachine::_validate_request(Request *request)
+int8_t X10_RequestMachine::_validate_request(RequestImpl *request)
 {
     if (IS_NULL(request))
     {
@@ -335,7 +335,7 @@ int8_t X10_RequestMachine::_validate_request(Request *request)
     {
         for (size_t i = 0; i < _request_count; i++)
         {
-            Request *instance = _requests[i];
+            RequestImpl *instance = _requests[i];
             if (NOT_NULL(instance) && instance->hash() == request->hash())
             {
                 return 0;
@@ -349,7 +349,7 @@ bool X10_RequestMachine::_allocate_requests(size_t size)
 {
     _request_count = size;
     _request_hashes = CREATE_ARRAY(uint32_t, size);
-    _requests = CREATE_ARRAY(Request *, size);
+    _requests = CREATE_ARRAY(RequestImpl *, size);
     return NOT_NULL(_requests) && NOT_NULL(_request_hashes);
 }
 
@@ -365,7 +365,7 @@ void X10_RequestMachine::_load_requests(RequestLoader *loader)
     size_t shift = 0;
     for (size_t i = 0; i < loader->count; i++)
     {
-        Request *request = loader->requests[i];
+        RequestImpl *request = loader->requests[i];
         if (_validate_request(request) == 1)
         {
             request->_respond_queue = _respond_queue_handler;
