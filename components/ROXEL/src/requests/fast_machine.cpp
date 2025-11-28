@@ -1,12 +1,61 @@
 #include "requests/fast_machine.h"
 
+inline static const char *FAST_REQUEST_EVENT_ID = "f_req";
+
+inline static void __frm_udp_message_process__(FastRequestMachine *machine, int8_t client_id, const char *buffer, size_t len)
+{
+    if (IS_NULL(machine->_transaction_queue_handler))
+    {
+        return;
+    }
+    cJSON *json = cJSON_ParseWithOpts(buffer, NULL, false);
+    const char *event = NULL;
+    if (!json || !cJSON_IsObject(json) || IS_NULL((event = cJSON_GetStringValue(cJSON_GetObjectItem(json, "e")))))
+    {
+        if (NOT_NULL(json))
+        {
+            cJSON_Delete(json);
+        }
+        return;
+    }
+    const char *id = nullptr;
+    cJSON *data_item = cJSON_GetObjectItem(json, "d");
+    if (IS_NULL((id = cJSON_GetStringValue(cJSON_GetObjectItem(json, "n")))) || IS_NULL(data_item) || !cJSON_IsObject(data_item))
+    {
+        cJSON_Delete(json);
+        return;
+    }
+    if (CRC32(event) != machine->_identificator)
+    {
+        cJSON_Delete(json);
+        return;
+    }
+    RequestTransaction transaction;
+    transaction.data = cJSON_PrintUnformatted(data_item);
+    transaction.client_id = client_id;
+    transaction.hash = CRC32(id);
+    transaction.connect = 0;
+    if (NOT_NULL(transaction.data))
+    {
+        if (xQueueSend(*machine->_transaction_queue_handler, &transaction, portMAX_DELAY) != pdPASS)
+        {
+            vPortFree(transaction.data);
+        }
+    }
+    cJSON_Delete(json);
+}
+
 inline static void __frm_udp_server_task__(void *pvParameters)
 {
     FastRequestMachine *machine = static_cast<FastRequestMachine *>(pvParameters);
-    char rx_buffer[128];
     char addr_str[INET_ADDRSTRLEN];
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
+
+    char rx_buffer[512];
+    char buffer[256];
+    int frame_len = 0;
+
     while (machine->isRunning())
     {
         int sock = machine->_socket;
@@ -18,12 +67,39 @@ inline static void __frm_udp_server_task__(void *pvParameters)
         int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&client_addr, &addr_len);
         if (len >= 0)
         {
-            rx_buffer[len] = 0;
+            rx_buffer[len] = '\0';
 
             inet_ntop(AF_INET, &client_addr.sin_addr, addr_str, sizeof(addr_str));
-            int state = machine->_cli_manager->ping(ntohl(client_addr.sin_addr.s_addr));
-            if (state != 1)
+            uint32_t hash = ntohl(client_addr.sin_addr.s_addr);
+            int client_id = machine->_cli_manager->find(hash);
+            int state = machine->_cli_manager->ping(hash);
+            if (state != 1 || client_id < 0)
                 continue;
+
+            if (frame_len + len >= sizeof(buffer))
+            {
+                frame_len = 0;
+                continue;
+            }
+
+            memcpy(buffer + frame_len, rx_buffer, len);
+            frame_len += len;
+
+            size_t i = 0;
+            while (i + 3 < frame_len)
+            {
+                if (buffer[i] == '\r' && buffer[i + 1] == '\n' && buffer[i + 2] == '\r' && buffer[i + 3] == '\n')
+                {
+                    buffer[i] = '\0';
+                    __frm_udp_message_process__(machine, client_id, buffer, i);
+                    size_t remain = frame_len - (i + 4);
+                    memmove(buffer, buffer + i + 4, remain);
+                    frame_len = remain;
+                    i = 0;
+                    continue;
+                }
+                i++;
+            }
 
             ROXEL_LOGW("[REQUEST MACHINE | FAST] Package: %s", rx_buffer);
         }
@@ -40,10 +116,12 @@ inline static void __frm_udp_server_task__(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-FastRequestMachine::FastRequestMachine(uint16_t port, x10_cli_manager *cli_manager)
+FastRequestMachine::FastRequestMachine(uint16_t port, x10_cli_manager *cli_manager, QueueHandle_t *transaction_queue_handler)
 {
+    _transaction_queue_handler = transaction_queue_handler;
     _cli_manager = cli_manager;
     _udp_port = port;
+    _identificator = CRC32(FAST_REQUEST_EVENT_ID);
 }
 
 FastRequestMachine::~FastRequestMachine()

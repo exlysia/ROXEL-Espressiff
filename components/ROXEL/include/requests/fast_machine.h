@@ -10,13 +10,14 @@
 class FastRequestMachine
 {
 public:
-    FastRequestMachine(uint16_t port, x10_cli_manager *cli_manager);
+    FastRequestMachine(uint16_t port, x10_cli_manager *cli_manager, QueueHandle_t *transaction_queue_handler);
     ~FastRequestMachine();
     bool load(RequestLoader *loader);
     void launch(void);
     void stop(void);
     bool isRunning(void) const;
 
+    QueueHandle_t *_transaction_queue_handler = NULL;
     TaskHandle_t _udp_server_task_handler = NULL;
 
     uint32_t *_request_hashes = nullptr;
@@ -24,6 +25,7 @@ public:
     size_t _request_count = 0;
 
     x10_cli_manager *_cli_manager;
+    uint32_t _identificator = 0;
     int _socket = -1;
 
     void _stop_server(void);

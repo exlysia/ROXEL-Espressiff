@@ -100,8 +100,8 @@ inline static void __x10__router_task__(void *pvParameters)
 
 X10_router::X10_router(x10_cli_manager *cli_manager, uint16_t frm_port, QueueHandle_t *on_connect_handler, QueueHandle_t *message_handler)
 {
-    _fast_request_machine = CREATE(FastRequestMachine, frm_port, cli_manager);
     _full_request_machine = CREATE(X10_RequestMachine, cli_manager);
+    _fast_request_machine = CREATE(FastRequestMachine, frm_port, cli_manager, NOT_NULL(_full_request_machine) ? &(_full_request_machine->_transaction_queue_handler) : NULL);
     _effect_machine = CREATE(X10_EffectMachine, cli_manager);
     _on_connect_handler = on_connect_handler;
     _message_handler = message_handler;
