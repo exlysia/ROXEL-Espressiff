@@ -18,7 +18,7 @@ typedef enum
 {
     FULL,
     FAST,
-    NONE
+    UNKNOWN_REQUEST_TYPE
 } RequestType;
 
 typedef struct
@@ -66,7 +66,7 @@ public:
     int _position = -1;
 
 private:
-    RequestType _type = RequestType::NONE;
+    RequestType _type = RequestType::UNKNOWN_REQUEST_TYPE;
     uint32_t _hash = 0;
     const char *_id;
     size_t _id_size;
