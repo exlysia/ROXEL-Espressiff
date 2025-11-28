@@ -3,10 +3,9 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "roxel_macro.h"
-
-#include "cli_manager.h"
-#include "lwip/sockets.h"
+#include <lwip/sockets.h>
+#include "../../utils/roxel_macro.h"
+#include "../../utils/cli_manager.h"
 
 class roxel_udp
 {

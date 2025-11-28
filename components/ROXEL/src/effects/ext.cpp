@@ -1,4 +1,4 @@
-#include "effect_ext.h"
+#include "effects/ext.h"
 
 /*
 [EffectImpl-extension]

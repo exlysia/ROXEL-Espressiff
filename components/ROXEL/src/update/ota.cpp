@@ -1,4 +1,4 @@
-#include "roxel_ota.h"
+#include "update/ota.h"
 
 inline static const char *OTA_EVENT_ID = "ota";
 

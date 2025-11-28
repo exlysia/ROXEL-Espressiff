@@ -1,4 +1,4 @@
-#include "request_ext.h"
+#include "requests/ext.h"
 
 Payload::Payload(cJSON *data)
 {
@@ -63,29 +63,20 @@ Payload &Payload::object(const char *key)
     return *this;
 }
 
-Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect)
+RequestImpl::RequestImpl(const char *id, RequestType type)
 {
-    _on_connect = onConnect;
-    _on_call = onCall;
     _id_size = strlen(id);
     _hash = CRC32(id);
+    _type = type;
     _id = id;
 }
 
-Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall)
-{
-    _on_call = onCall;
-    _id_size = strlen(id);
-    _hash = CRC32(id);
-    _id = id;
-}
-
-const char *Request::id(void) const
+const char *RequestImpl::id(void) const
 {
     return _id;
 }
 
-uint32_t Request::hash(void) const
+uint32_t RequestImpl::hash(void) const
 {
     if (!_id)
     {
@@ -94,14 +85,30 @@ uint32_t Request::hash(void) const
     return _hash;
 }
 
-size_t Request::id_size(void) const
+size_t RequestImpl::id_size(void) const
 {
     return _id_size;
 }
 
-bool Request::operator==(const Request &other) const
+bool RequestImpl::operator==(const RequestImpl &other) const
 {
     return _hash == other._hash;
+}
+
+RequestType RequestImpl::type(void)
+{
+    return _type;
+}
+
+Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall, std::function<void(Incoming, ClientID)> onConnect) : RequestImpl(id, RequestType::FULL)
+{
+    _on_connect = onConnect;
+    _on_call = onCall;
+}
+
+Request::Request(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall) : RequestImpl(id, RequestType::FULL)
+{
+    _on_call = onCall;
 }
 
 void Request::respond(int client_id, cJSON *data)
@@ -111,7 +118,7 @@ void Request::respond(int client_id, cJSON *data)
         RequestRespond answer;
         answer.client_id = client_id;
         answer.respond = data;
-        answer.id = _id;
+        answer.id = id();
         if (xQueueSend(_respond_queue, &answer, portMAX_DELAY) != pdPASS)
         {
             cJSON_Delete(data);
@@ -144,6 +151,24 @@ void Request::update_connect(int client_id)
     if (_on_connect)
     {
         _on_connect(*this, client_id);
+    }
+}
+
+FastRequest::FastRequest(const char *id, std::function<void(Incoming, ClientID, Payload)> onCall) : RequestImpl(id, RequestType::FAST)
+{
+    _on_call = onCall;
+}
+
+void FastRequest::update_call(int client_id, cJSON *data)
+{
+    if (_on_call)
+    {
+        Payload *payload = CREATE(Payload, data);
+        if (NOT_NULL(payload))
+        {
+            _on_call(*this, client_id, *payload);
+            DELETE(payload);
+        }
     }
 }
 
@@ -190,12 +215,12 @@ cJSON *Answer::detach(void)
     return tmp;
 }
 
-void Answer::respond(int client_id, Request &incomming)
+void Answer::respond(int client_id, RequestImpl &incomming)
 {
     incomming.respond(client_id, detach());
 }
 
-void Answer::broadcast(Request &incomming)
+void Answer::broadcast(RequestImpl &incomming)
 {
     incomming.respond(-1, detach());
 }

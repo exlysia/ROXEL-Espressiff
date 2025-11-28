@@ -1,4 +1,4 @@
-#include "effect_machine.h"
+#include "effects/machine.h"
 
 inline static const char *EFFECT_EVENT_ID = "ef";
 inline static int EFFECT_EVENT_ID_LEN = 2;
@@ -278,7 +278,7 @@ void X10_EffectMachine::_release_resources(void)
     DELETE_QUEUE(_hook_receive_queue_handler);
     DELETE_QUEUE(_hook_update_queue_handler);
     DELETE_QUEUE(_mediator_queue_handler);
-    DELETE_MUTEXT(_buffer_lock);
+    DELETE_MUTEX(_buffer_lock);
     DELETE(_effect_states);
     DELETE(_effect_hashes);
     DELETE(_effects);

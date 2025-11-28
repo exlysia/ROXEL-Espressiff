@@ -1,4 +1,4 @@
-#include "request_machine.h"
+#include "requests/full_machine.h"
 
 inline static const char *REQUEST_EVENT_ID = "req";
 
@@ -76,7 +76,7 @@ inline static void __x10__request_machine_execution_task__(void *pvParameters)
         }
         if (xQueueReceive(machine->_execution_queue_handler, &execution, portMAX_DELAY))
         {
-            Request *instance = execution.position > -1 && execution.position < machine->_request_count ? machine->_requests[execution.position] : nullptr;
+            RequestImpl *instance = execution.position > -1 && execution.position < machine->_request_count ? machine->_requests[execution.position] : nullptr;
             if (execution.connect)
             {
                 if (NOT_NULL(instance))
@@ -192,21 +192,21 @@ bool X10_RequestMachine::load(RequestLoader *loader)
 {
     if (IS_NULL(loader) || IS_NULL(loader->requests))
     {
-        ROXEL_LOGW("[REQUEST MACHINE] Request-objects is NULL or not passed");
+        ROXEL_LOGW("[REQUEST MACHINE | FULL] Request-objects is NULL or not passed");
         return 0;
     }
     if (loader->count > 0)
     {
         _request_count = loader->count;
         size_t accepted = _accept_requests(loader->requests, loader->count);
-        ROXEL_LOG(accepted > 0 ? ESP_LOG_INFO : ESP_LOG_ERROR, "[REQUEST MACHINE] Accepted objects: %d", accepted);
+        ROXEL_LOG(accepted > 0 ? ESP_LOG_INFO : ESP_LOG_ERROR, "[REQUEST MACHINE | FULL] Accepted objects: %d", accepted);
         if (accepted > 0)
         {
             if (_allocate_requests(accepted) && _allocate_respond_cache())
             {
                 if (!_initialize_query())
                 {
-                    ROXEL_LOGE("[REQUEST MACHINE] Queue initialization is failed");
+                    ROXEL_LOGE("[REQUEST MACHINE | FULL] Queue initialization is failed");
                     _release_resources();
                     return 0;
                 }
@@ -214,7 +214,7 @@ bool X10_RequestMachine::load(RequestLoader *loader)
                 _load_requests(loader);
                 if (!_start_tasks())
                 {
-                    ROXEL_LOGE("[REQUEST MACHINE] Creation tasks is failed");
+                    ROXEL_LOGE("[REQUEST MACHINE | FULL] Creation tasks is failed");
                     _release_resources();
                     return 0;
                 }
@@ -222,14 +222,14 @@ bool X10_RequestMachine::load(RequestLoader *loader)
             }
             else
             {
-                ROXEL_LOGE("[REQUEST MACHINE] Memory allocating failed");
+                ROXEL_LOGE("[REQUEST MACHINE | FULL] Memory allocating failed");
                 return 0;
             }
         }
     }
     else
     {
-        ROXEL_LOGW("[REQUEST MACHINE] Request-objects is not passed");
+        ROXEL_LOGW("[REQUEST MACHINE | FULL] Request-objects is not passed");
     }
     return 0;
 }
@@ -303,29 +303,31 @@ void X10_RequestMachine::_release_resources(void)
     DELETE_QUEUE(_transaction_queue_handler);
     DELETE_QUEUE(_execution_queue_handler);
     DELETE_QUEUE(_respond_queue_handler);
-    DELETE_MUTEXT(_instances_lock);
+    DELETE_MUTEX(_instances_lock);
     DELETE(_request_hashes);
     DELETE(_requests);
     _free_buffer();
 }
 
-size_t X10_RequestMachine::_accept_requests(Request **requests, size_t count)
+size_t X10_RequestMachine::_accept_requests(RequestImpl **requests, size_t count)
 {
     size_t accepted = 0;
     for (size_t i = 0; i < count; i++)
     {
-        Request *request = requests[i];
+        RequestImpl *request = requests[i];
+        if (NOT_NULL(request) && request->type() != RequestType::FULL)
+            continue;
         int8_t result = _validate_request(request);
         accepted += result == 1 ? 1 : 0;
         if (result != 1)
         {
-            ROXEL_LOGW("[REQUEST MACHINE] '%s' object is not passed in position %d ", NOT_NULL(request) ? request->id() : "NULL", i);
+            ROXEL_LOGW("[REQUEST MACHINE | FULL] '%s' object is not passed in position %d ", NOT_NULL(request) ? request->id() : "NULL", i);
         }
     }
     return accepted;
 }
 
-int8_t X10_RequestMachine::_validate_request(Request *request)
+int8_t X10_RequestMachine::_validate_request(RequestImpl *request)
 {
     if (IS_NULL(request))
     {
@@ -335,7 +337,7 @@ int8_t X10_RequestMachine::_validate_request(Request *request)
     {
         for (size_t i = 0; i < _request_count; i++)
         {
-            Request *instance = _requests[i];
+            RequestImpl *instance = _requests[i];
             if (NOT_NULL(instance) && instance->hash() == request->hash())
             {
                 return 0;
@@ -349,7 +351,7 @@ bool X10_RequestMachine::_allocate_requests(size_t size)
 {
     _request_count = size;
     _request_hashes = CREATE_ARRAY(uint32_t, size);
-    _requests = CREATE_ARRAY(Request *, size);
+    _requests = CREATE_ARRAY(RequestImpl *, size);
     return NOT_NULL(_requests) && NOT_NULL(_request_hashes);
 }
 
@@ -365,7 +367,7 @@ void X10_RequestMachine::_load_requests(RequestLoader *loader)
     size_t shift = 0;
     for (size_t i = 0; i < loader->count; i++)
     {
-        Request *request = loader->requests[i];
+        RequestImpl *request = loader->requests[i];
         if (_validate_request(request) == 1)
         {
             request->_respond_queue = _respond_queue_handler;

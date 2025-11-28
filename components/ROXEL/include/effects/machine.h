@@ -5,10 +5,10 @@
 #include <freertos/semphr.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
-#include "machine_impl.h"
-#include "cli_manager.h"
-#include "effect_ext.h"
-#include "roxel_macro.h"
+#include "../utils/machine_impl.h"
+#include "../utils/cli_manager.h"
+#include "../utils/roxel_macro.h"
+#include "ext.h"
 
 typedef struct
 {

@@ -1,9 +1,8 @@
 #ifndef _ROXEL_NETWORK_H_
 #define _ROXEL_NETWORK_H_
 
-#include "roxel_dns.h"
-#include "roxel_network.h"
-#include "roxel_macro.h"
+#include "../utils/roxel_macro.h"
+#include "dns.h"
 
 class roxel_network;
 

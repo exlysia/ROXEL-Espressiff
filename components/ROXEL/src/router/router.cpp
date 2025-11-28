@@ -1,8 +1,8 @@
-#include "router.h"
+#include "router/router.h"
 
 inline static void __x10__router_processing__(int client_id, X10_router *router, const char *event, cJSON *json)
 {
-    X10_RequestMachine *requests = router->request_machine();
+    X10_RequestMachine *requests = router->request_full_machine();
     X10_EffectMachine *effects = router->effect_machine();
     OTA *ota = router->ota_instance();
     uint32_t ev_hash = CRC32(event);
@@ -25,7 +25,7 @@ inline static void __x10__router_processing__(int client_id, X10_router *router,
 
 inline static void __x10__router_on_connect__(X10_router *router, int client_id)
 {
-    X10_RequestMachine *requests = router->request_machine();
+    X10_RequestMachine *requests = router->request_full_machine();
     X10_EffectMachine *effects = router->effect_machine();
     if (NOT_NULL(requests))
     {
@@ -98,9 +98,10 @@ inline static void __x10__router_task__(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-X10_router::X10_router(x10_cli_manager *cli_manager, QueueHandle_t *on_connect_handler, QueueHandle_t *message_handler)
+X10_router::X10_router(x10_cli_manager *cli_manager, uint16_t frm_port, QueueHandle_t *on_connect_handler, QueueHandle_t *message_handler)
 {
-    _request_machine = CREATE(X10_RequestMachine, cli_manager);
+    _full_request_machine = CREATE(X10_RequestMachine, cli_manager);
+    _fast_request_machine = CREATE(FastRequestMachine, frm_port, cli_manager, NOT_NULL(_full_request_machine) ? &(_full_request_machine->_transaction_queue_handler) : NULL);
     _effect_machine = CREATE(X10_EffectMachine, cli_manager);
     _on_connect_handler = on_connect_handler;
     _message_handler = message_handler;
@@ -122,6 +123,10 @@ void X10_router::launch(void)
     {
         xTaskCreate(__x10__router_task__, "x10_router", 8192, this, 4, &_router_task_handler);
     }
+    if (NOT_NULL(_fast_request_machine))
+    {
+        _fast_request_machine->launch();
+    }
 }
 
 void X10_router::stop(void)
@@ -136,6 +141,10 @@ void X10_router::stop(void)
         ROXEL_LOGW("[ROUTER] Message receiver task is killed");
         DELETE_TASK(_router_task_handler);
     }
+    if (NOT_NULL(_fast_request_machine))
+    {
+        _fast_request_machine->stop();
+    }
 }
 
 void X10_router::attachOverTheAir(OTA *ota)
@@ -146,9 +155,14 @@ void X10_router::attachOverTheAir(OTA *ota)
     }
 }
 
-X10_RequestMachine *X10_router::request_machine(void) const
+X10_RequestMachine *X10_router::request_full_machine(void) const
 {
-    return _request_machine;
+    return _full_request_machine;
+}
+
+FastRequestMachine *X10_router::request_fast_machine(void) const
+{
+    return _fast_request_machine;
 }
 
 X10_EffectMachine *X10_router::effect_machine(void) const

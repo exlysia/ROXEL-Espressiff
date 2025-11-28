@@ -8,6 +8,7 @@ inline static void onClientConnected(Incoming incoming, ClientID client_id);
 Network network("<YOUR_WIFI_SSID>", "<YOUR_WIFI_PASSKEY>", {.ip = "192.168.0.120", .gateway = "192.168.0.1", .netmask = "255.255.255.0"});
 ROXEL sdk(network, "<AUTH_TOKEN>");
 
+FastRequest myFastRequest("my_fast_request", onRequestIncoming);
 Request myRequest("my_request", onRequestIncoming, onClientConnected);
 StatesEffect myStates("my_states", onStatesUpdate, 16);
 Effect myEffect("my_effect", onEffectUpdate, 100);
@@ -42,6 +43,11 @@ inline static void onRequestIncoming(Incoming incoming, ClientID client_id, Payl
             .number("count", count)
             .text("echo", message)
             .broadcast(incoming);
+        return;
+    }
+    if (myFastRequest == incoming)
+    {
+        // NO ANSWER REQUEST TYPE
     }
 }
 
@@ -59,7 +65,7 @@ inline static void onClientConnected(Incoming incoming, ClientID client_id)
 
 inline static void setup(Instance self)
 {
-    LOAD_REQUESTS(self, &myRequest);
+    LOAD_REQUESTS(self, &myRequest, &myFastRequest);
     LOAD_EFFECTS(self, &myEffect, &myStates);
     INITIALIZE_OTA(self, 3232);
 }

@@ -83,8 +83,10 @@
     "streambuf": "cpp",
     "cinttypes": "cpp",
     "typeinfo": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "cli_manager.h": "c",
+    "roxel_macro.h": "c"
   },
-  "idf.portWin": "COM4",
+  "idf.portWin": "COM6",
   "idf.flashType": "UART"
 }
