@@ -45,7 +45,7 @@ inline static void __x10__request_machine_respond_task__(void *pvParameters)
     X10_RequestMachine *machine = static_cast<X10_RequestMachine *>(pvParameters);
     RequestRespond respond;
 
-    ROXEL_LOGI("[REQUEST MACHINE] Respond task is started");
+    ROXEL_LOGI("[REQUEST MACHINE | FULL] Respond task is started");
     while (NOT_NULL(machine))
     {
         if (IS_NULL(machine->_respond_queue_handler))
@@ -66,7 +66,7 @@ inline static void __x10__request_machine_execution_task__(void *pvParameters)
     X10_RequestMachine *machine = static_cast<X10_RequestMachine *>(pvParameters);
     RequestExecution execution;
 
-    ROXEL_LOGI("[REQUEST MACHINE] Execution task is started");
+    ROXEL_LOGI("[REQUEST MACHINE | FULL] Execution task is started");
     while (NOT_NULL(machine))
     {
         if (IS_NULL(machine->_execution_queue_handler))
@@ -121,7 +121,7 @@ inline static void __x10__request_machine_transaction_task__(void *pvParameters)
     X10_RequestMachine *machine = static_cast<X10_RequestMachine *>(pvParameters);
     RequestTransaction transaction;
 
-    ROXEL_LOGI("[REQUEST MACHINE] Transaction task is started");
+    ROXEL_LOGI("[REQUEST MACHINE | FULL] Transaction task is started");
     while (NOT_NULL(machine))
     {
         if (IS_NULL(machine->_transaction_queue_handler) || IS_NULL(machine->_execution_queue_handler))
@@ -332,6 +332,10 @@ int8_t X10_RequestMachine::_validate_request(RequestImpl *request)
     if (IS_NULL(request))
     {
         return -1;
+    }
+    if (request->type() != RequestType::FULL)
+    {
+        return 0;
     }
     if (NOT_NULL(_requests))
     {
