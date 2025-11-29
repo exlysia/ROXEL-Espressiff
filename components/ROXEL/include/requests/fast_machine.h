@@ -10,15 +10,21 @@
 class FastRequestMachine
 {
 public:
-    FastRequestMachine(uint16_t port, x10_cli_manager *cli_manager, QueueHandle_t *transaction_queue_handler);
+    FastRequestMachine(uint16_t port, x10_cli_manager *cli_manager);
     ~FastRequestMachine();
     bool load(RequestLoader *loader);
     void launch(void);
     void stop(void);
     bool isRunning(void) const;
 
-    QueueHandle_t *_transaction_queue_handler = NULL;
+    QueueHandle_t _transaction_queue_handler = NULL;
+    QueueHandle_t _execution_queue_handler = NULL;
+    
+    TaskHandle_t _transaction_task_handler = NULL;
+    TaskHandle_t _execution_task_handler = NULL;
     TaskHandle_t _udp_server_task_handler = NULL;
+
+    SemaphoreHandle_t _instances_lock = NULL;
 
     uint32_t *_request_hashes = nullptr;
     RequestImpl **_requests = nullptr;
@@ -34,9 +40,11 @@ private:
     bool _is_running = 0;
     uint16_t _udp_port;
 
+    bool _start_server_task(void);
+    void _stop_server_task(void);
     bool _create_server(void);
     bool _start_tasks(void);
-    void _stop_task(void);
+    bool _initialize_query(void);
     void _load_requests(RequestLoader *loader);
     size_t _accept_requests(RequestImpl **requests, size_t count);
     int8_t _validate_request(RequestImpl *request);

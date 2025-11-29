@@ -9,8 +9,22 @@ typedef struct
     char *data = nullptr;
     int8_t client_id = -1;
     uint32_t hash = 0;
+} FastRequestTransaction;
+
+typedef struct
+{
+    char *data = nullptr;
+    int8_t client_id = -1;
+    uint32_t hash = 0;
     bool connect = 0;
 } RequestTransaction;
+
+typedef struct
+{
+    int8_t client_id;
+    int position;
+    char *data;
+} FastRequestExecution;
 
 typedef struct
 {
