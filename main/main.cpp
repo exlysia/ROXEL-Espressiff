@@ -5,8 +5,8 @@ inline static void onEffectUpdate(Hook hook, State state);
 inline static void onRequestIncoming(Incoming incoming, ClientID client_id, Payload payload);
 inline static void onClientConnected(Incoming incoming, ClientID client_id);
 
-Network network("Yingxing_2.4GHz", "Pride.X_Pinoni2004", {.ip = "192.168.0.120", .gateway = "192.168.0.1", .netmask = "255.255.255.0"});
-ROXEL sdk(network, "123");
+Network network("<YOUR_WIFI_SSID>", "<YOUR_WIFI_PASSKEY>", {.ip = "192.168.0.120", .gateway = "192.168.0.1", .netmask = "255.255.255.0"});
+ROXEL sdk(network, "<AUTH_TOKEN>");
 
 FastRequest myFastRequest("my_fast_request", onRequestIncoming);
 Request myRequest("my_request", onRequestIncoming, onClientConnected);
@@ -47,7 +47,6 @@ inline static void onRequestIncoming(Incoming incoming, ClientID client_id, Payl
     }
     if (myFastRequest == incoming)
     {
-        ROXEL_LOGW("[FAST REQUEST] Request called");
         // NO ANSWER REQUEST TYPE
     }
 }
