@@ -20,13 +20,13 @@ public:
     TaskHandle_t _udp_task_handler;
     int _socket = -1;
 
+    bool _create_server(void);
     void _stop_server(void);
 
 private:
     bool _is_running = 0;
     uint16_t _port;
 
-    bool _create_server(void);
     bool _launch_task(void);
     void _stop_task(void);
 };

@@ -235,6 +235,7 @@ void ROXEL::_release_resources(void)
     DELETE(_udp_server);
     DELETE(_tcp_server);
     DELETE(_cli_manager);
+    _network->release();
 }
 
 bool ROXEL::_handle_over_the_air(void)
