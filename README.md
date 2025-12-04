@@ -10,12 +10,8 @@ Import the library
 ```
 
 Create an internet interface
-> [!WARNING]
-> The following fields must be specified: `ip`, `gateway`
-> 
-> Optional: `netmask`
 ```c++
-Network network("<YOUR_WIFI_SSID>", "<YOUR_WIFI_PASSKEY>", {.ip = "192.168.0.120", .gateway = "192.168.0.1", .netmask = "255.255.255.0"});
+Network network("<YOUR_WIFI_SSID>", "<YOUR_WIFI_PASSKEY>");
 ```
 
 Create an instance
