@@ -15,13 +15,12 @@ inline static void __x10__udp_task__(void *pvParameters)
     const char *PONG_UNAVAILABLE_MESSAGE = "UNAVAILABLE";
     while (udp->isRunning())
     {
-        int sock = udp->_socket;
-        if (sock < 0)
+        if (!udp->_create_server())
         {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(2500));
             continue;
         }
-
+        int sock = udp->_socket;
         int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&client_addr, &addr_len);
         if (len >= 0)
         {
@@ -83,7 +82,7 @@ roxel_udp::~roxel_udp()
 void roxel_udp::launch(void)
 {
     _is_running = true;
-    if (!_create_server() || !_launch_task())
+    if (!_launch_task())
     {
         _stop_server();
         _is_running = false;
@@ -104,6 +103,10 @@ bool roxel_udp::isRunning(void) const
 
 bool roxel_udp::_create_server(void)
 {
+    if (_socket > -1)
+    {
+        return 1;
+    }
     _socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (_socket < 0)
     {
@@ -153,6 +156,9 @@ void roxel_udp::_stop_server(void)
 
 void roxel_udp::_stop_task(void)
 {
-    ROXEL_LOGI("[UDP] Server task is killed");
-    DELETE_TASK(_udp_task_handler);
+    if (isRunning())
+    {
+        ROXEL_LOGI("[UDP] Server task is killed");
+        DELETE_TASK(_udp_task_handler);
+    }
 }

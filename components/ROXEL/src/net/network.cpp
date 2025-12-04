@@ -4,46 +4,69 @@
 #include "esp_wifi.h"
 #include <string.h>
 
+static bool wifi_connected = false;
+static bool ip_received = false;
+
+inline static void network_task(void *arg)
+{
+    while (1)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        if (!wifi_connected)
+        {
+            vTaskDelay(pdMS_TO_TICKS(1500));
+            esp_wifi_connect();
+            continue;
+        }
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        if (!ip_received)
+        {
+            esp_wifi_disconnect();
+        }
+    }
+}
+
 inline static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t event_id, void *event_data)
 {
-    Network *instance = nullptr;
-    if (arg != NULL && arg != nullptr)
-    {
-        instance = static_cast<Network *>(arg);
-    }
+    Network *instance = static_cast<Network *>(arg);
     if (event_base == WIFI_EVENT)
     {
         if (event_id == WIFI_EVENT_STA_START)
         {
             esp_wifi_connect();
+            return;
+        }
+        if (event_id == WIFI_EVENT_STA_CONNECTED)
+        {
+            wifi_connected = true;
+            ip_received = false;
+            if (instance->_task_is_running)
+                xTaskNotifyGive(instance->_task_handler);
+            return;
         }
         else if (event_id == WIFI_EVENT_STA_DISCONNECTED)
         {
-            if (instance != nullptr)
-            {
-                instance->__push_connection_state__(0);
-            }
-            esp_wifi_connect();
+            wifi_connected = false;
+            instance->__push_connection_state__(0);
+            if (instance->_task_is_running)
+                xTaskNotifyGive(instance->_task_handler);
         }
     }
     else if (event_base == IP_EVENT)
     {
         if (event_id == IP_EVENT_STA_GOT_IP)
         {
-            if (instance != nullptr)
-            {
-                instance->__push_connection_state__(1);
-            }
+            ip_received = true;
+            instance->__push_connection_state__(1);
         }
     }
 }
 
-roxel_network::roxel_network(const char *ssid, const char *passkey, const X10NET_Config &config)
+roxel_network::roxel_network(const char *ssid, const char *passkey)
 {
     _passkey = passkey;
     _ssid = ssid;
-    _dns = new roxel_dns(config);
 }
 
 roxel_network::~roxel_network()
@@ -54,6 +77,11 @@ roxel_network::~roxel_network()
         delete _dns;
         _dns = nullptr;
     }
+}
+
+void roxel_network::useStaticConfiguration(const X10NET_Config &config)
+{
+    _dns = new roxel_dns(config);
 }
 
 void roxel_network::initialize(void)
@@ -82,6 +110,7 @@ void roxel_network::initialize(void)
     {
         _dns->launch();
     }
+    __start_task__();
     esp_wifi_start();
 }
 
@@ -100,9 +129,18 @@ bool roxel_network::state(void)
     return _sta_state;
 }
 
+void roxel_network::release(void)
+{
+    if (_task_is_running)
+    {
+        DELETE_TASK(_task_handler);
+        _task_is_running = false;
+    }
+}
+
 void roxel_network::__push_connection_state__(bool state)
 {
-    _updates_available = _sta_state != state;
+    _updates_available = 1;
     _sta_state = state;
 }
 
@@ -125,4 +163,9 @@ void roxel_network::__sys__stop_network__(void)
     {
         ROXEL_LOGE("[NETWORK] esp_wifi_deinit failed: %d", err);
     }
+}
+
+void roxel_network::__start_task__(void)
+{
+    _task_is_running = xTaskCreate(network_task, "roxel_network", 2048, nullptr, 3, &_task_handler);
 }

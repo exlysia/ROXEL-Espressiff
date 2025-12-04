@@ -141,12 +141,12 @@ inline static void __frm_udp_server_task__(void *pvParameters)
 
     while (machine->isRunning())
     {
-        int sock = machine->_socket;
-        if (sock < 0)
+        if (!machine->_create_server())
         {
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(2500));
             continue;
         }
+        int sock = machine->_socket;
         int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&client_addr, &addr_len);
         if (len >= 0)
         {
@@ -260,7 +260,7 @@ bool FastRequestMachine::load(RequestLoader *loader)
 void FastRequestMachine::launch(void)
 {
     _is_running = true;
-    if (!_create_server() || !_start_server_task())
+    if (!_start_server_task())
     {
         _stop_server_task();
         _is_running = false;
@@ -325,8 +325,11 @@ bool FastRequestMachine::_start_server_task(void)
 
 void FastRequestMachine::_stop_server_task(void)
 {
-    ROXEL_LOGI("[REQUEST MACHINE | FAST] Server task is killed");
-    DELETE_TASK(_udp_server_task_handler);
+    if (isRunning())
+    {
+        ROXEL_LOGI("[REQUEST MACHINE | FAST] Server task is killed");
+        DELETE_TASK(_udp_server_task_handler);
+    }
 }
 
 bool FastRequestMachine::_initialize_query(void)

@@ -144,6 +144,11 @@ inline static void __x10__server_tcp_task__(void *pvParameters)
     socklen_t addr_len = sizeof(client_addr);
     while (tcp->isRunning())
     {
+        if (!tcp->_create_server())
+        {
+            vTaskDelay(pdMS_TO_TICKS(2500));
+            continue;
+        }
         int client_sock = accept(tcp->_socket, (struct sockaddr *)&client_addr, &addr_len);
         if (client_sock >= 0)
         {
@@ -215,7 +220,7 @@ roxel_tcp::~roxel_tcp()
 void roxel_tcp::launch(void)
 {
     _is_running = true;
-    if (!_create_server() || !_launch_task())
+    if (!_launch_task())
     {
         _stop_server();
         _is_running = false;
@@ -237,6 +242,10 @@ bool roxel_tcp::isRunning(void) const
 
 bool roxel_tcp::_create_server(void)
 {
+    if (_socket > -1)
+    {
+        return 1;
+    }
     _socket = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (_socket < 0)
     {
@@ -300,8 +309,11 @@ void roxel_tcp::_stop_server(void)
 
 void roxel_tcp::_stop_task(void)
 {
-    ROXEL_LOGI("[TCP] Server task is killed");
-    DELETE_TASK(_tcp_task_handler);
+    if (isRunning())
+    {
+        ROXEL_LOGI("[TCP] Server task is killed");
+        DELETE_TASK(_tcp_task_handler);
+    }
 }
 
 void roxel_tcp::_clear_queue(void)

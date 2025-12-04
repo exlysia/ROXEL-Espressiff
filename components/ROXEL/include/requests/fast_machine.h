@@ -34,6 +34,7 @@ public:
     uint32_t _identificator = 0;
     int _socket = -1;
 
+    bool _create_server(void);
     void _stop_server(void);
 
 private:
@@ -42,7 +43,6 @@ private:
 
     bool _start_server_task(void);
     void _stop_server_task(void);
-    bool _create_server(void);
     bool _start_tasks(void);
     bool _initialize_query(void);
     void _load_requests(RequestLoader *loader);
