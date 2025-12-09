@@ -63,10 +63,11 @@ inline static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-roxel_network::roxel_network(const char *ssid, const char *passkey)
+roxel_network::roxel_network(const char *ssid, const char *passkey, NetworkMode mode)
 {
     _passkey = passkey;
     _ssid = ssid;
+    _mode = mode;
 }
 
 roxel_network::~roxel_network()
@@ -86,6 +87,7 @@ void roxel_network::useStaticConfiguration(const X10NET_Config &config)
 
 void roxel_network::initialize(void)
 {
+    // Базовые системы
     esp_netif_init();
     esp_event_loop_create_default();
     esp_netif_create_default_wifi_sta();
@@ -99,17 +101,26 @@ void roxel_network::initialize(void)
     strncpy((char *)wifi_config.sta.ssid, _ssid, sizeof(wifi_config.sta.ssid));
     strncpy((char *)wifi_config.sta.password, _passkey, sizeof(wifi_config.sta.password));
     wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
-    wifi_config.sta.pmf_cfg.capable = true;
+    wifi_config.sta.pmf_cfg.capable = false;
     wifi_config.sta.pmf_cfg.required = false;
+    wifi_config.sta.listen_interval = 0;
+    wifi_config.sta.scan_method = WIFI_FAST_SCAN;
+    wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 
     esp_wifi_set_mode(WIFI_MODE_STA);
-    esp_wifi_set_ps(WIFI_PS_NONE);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+
+    if (_mode == NetworkMode::NET_MODE_FULL)
+    {
+        esp_wifi_set_ps(WIFI_PS_NONE);
+        esp_wifi_set_max_tx_power(78);
+    }
 
     if (_dns != nullptr)
     {
         _dns->launch();
     }
+
     __start_task__();
     esp_wifi_start();
 }
@@ -136,6 +147,11 @@ void roxel_network::release(void)
         DELETE_TASK(_task_handler);
         _task_is_running = false;
     }
+}
+
+NetworkMode roxel_network::mode(void) const
+{
+    return _mode;
 }
 
 void roxel_network::__push_connection_state__(bool state)
