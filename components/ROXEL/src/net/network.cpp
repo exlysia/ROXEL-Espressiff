@@ -113,7 +113,7 @@ void roxel_network::initialize(void)
     if (_mode == NetworkMode::NET_MODE_FULL)
     {
         esp_wifi_set_ps(WIFI_PS_NONE);
-        esp_wifi_set_max_tx_power(78);
+        esp_wifi_set_max_tx_power(84);
     }
 
     if (_dns != nullptr)
