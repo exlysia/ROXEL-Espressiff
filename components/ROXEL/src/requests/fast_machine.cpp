@@ -139,12 +139,18 @@ inline static void __frm_udp_server_task__(void *pvParameters)
     char buffer[256];
     int frame_len = 0;
 
+    bool serverCreated = 0;
+
     while (machine->isRunning())
     {
-        if (!machine->_create_server())
+        if (!serverCreated)
         {
-            vTaskDelay(pdMS_TO_TICKS(2500));
-            continue;
+            if (!machine->_create_server())
+            {
+                vTaskDelay(pdMS_TO_TICKS(2500));
+                continue;
+            }
+            serverCreated = 1;
         }
         int sock = machine->_socket;
         int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&client_addr, &addr_len);
@@ -281,11 +287,18 @@ bool FastRequestMachine::isRunning(void) const
 
 bool FastRequestMachine::_create_server(void)
 {
+    _stop_server();
     _socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (_socket < 0)
     {
         ROXEL_LOGE("[REQUEST MACHINE | FAST] Unable to create socket: errno %d", errno);
         return 0;
+    }
+
+    int opt = 1;
+    if (setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        ROXEL_LOGE("[REQUEST MACHINE | FAST] Unable to set SO_REUSEADDR: errno %d", errno);
     }
 
     struct sockaddr_in server_addr;
@@ -296,7 +309,6 @@ bool FastRequestMachine::_create_server(void)
     if (bind(_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         ROXEL_LOGE("[REQUEST MACHINE | FAST] Socket bind failed: errno %d", errno);
-        shutdown(_socket, SHUT_RDWR);
         close(_socket);
         _socket = -1;
         return 0;

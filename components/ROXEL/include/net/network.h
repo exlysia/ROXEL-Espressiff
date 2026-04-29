@@ -5,6 +5,7 @@
 #include <freertos/task.h>
 #include "../utils/roxel_macro.h"
 #include "dns.h"
+#include "esp_wifi.h"
 
 class roxel_network;
 
@@ -22,6 +23,7 @@ public:
     roxel_network(const char *ssid, const char *passkey, NetworkMode mode = NetworkMode::NET_MODE_SAVE);
     ~roxel_network();
     void useStaticConfiguration(const X10NET_Config &config = X10NET_Config());
+    void useCountryConfiguration(wifi_country_t country);
     void initialize(void);
     bool await(void);
     bool state(void);
@@ -40,6 +42,13 @@ private:
     const char *_ssid;
 
     NetworkMode _mode = NetworkMode::NET_MODE_SAVE;
+    wifi_country_t country = {
+        .cc = "RU",
+        .schan = 1,
+        .nchan = 13,
+        .max_tx_power = 84,
+        .policy = WIFI_COUNTRY_POLICY_MANUAL
+    };
     roxel_dns *_dns = nullptr;
 
     void __sys__init_event_handlers__(void);

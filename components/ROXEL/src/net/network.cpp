@@ -1,7 +1,6 @@
 #include "net/network.h"
 
 #include "esp_netif.h"
-#include "esp_wifi.h"
 #include <string.h>
 
 static bool wifi_connected = false;
@@ -85,9 +84,13 @@ void roxel_network::useStaticConfiguration(const X10NET_Config &config)
     _dns = new roxel_dns(config);
 }
 
+void roxel_network::useCountryConfiguration(wifi_country_t country)
+{
+    this->country = country;
+}
+
 void roxel_network::initialize(void)
 {
-    // Базовые системы
     esp_netif_init();
     esp_event_loop_create_default();
     esp_netif_create_default_wifi_sta();
@@ -110,11 +113,11 @@ void roxel_network::initialize(void)
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
 
+    esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N);
+    esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW20);
+
     if (_mode == NetworkMode::NET_MODE_FULL)
-    {
         esp_wifi_set_ps(WIFI_PS_NONE);
-        esp_wifi_set_max_tx_power(84);
-    }
 
     if (_dns != nullptr)
     {
@@ -123,6 +126,7 @@ void roxel_network::initialize(void)
 
     __start_task__();
     esp_wifi_start();
+    esp_wifi_set_country(&country);
 }
 
 bool roxel_network::await(void)
