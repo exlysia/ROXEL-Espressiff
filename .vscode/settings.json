@@ -88,5 +88,6 @@
     "roxel_macro.h": "c"
   },
   "idf.portWin": "COM6",
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "idf.currentSetup": "D:\\ESPRESSIF\\.espressif\\v5.5.4\\esp-idf"
 }
