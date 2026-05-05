@@ -5,7 +5,7 @@ inline static void onEffectUpdate(Hook hook, State state);
 inline static void onRequestIncoming(Incoming incoming, ClientID client_id, Payload payload);
 inline static void onClientConnected(Incoming incoming, ClientID client_id);
 
-Network network("<YOUR_WIFI_SSID>", "<YOUR_WIFI_PASSKEY>", {.ip = "192.168.0.120", .gateway = "192.168.0.1", .netmask = "255.255.255.0"});
+Network network("<YOUR_WIFI_SSID>", "<YOUR_WIFI_PASSKEY>", NetworkMode::NET_MODE_FULL);
 ROXEL sdk(network, "<AUTH_TOKEN>");
 
 FastRequest myFastRequest("my_fast_request", onRequestIncoming);
